@@ -4,8 +4,7 @@ var chai = require('chai'),
     sinon = require('sinon'),
     sinonChai = require('sinon-chai'),
     Queue = require('../Queue'),
-    Mailing = require('../Mailing'),
-    ApiRequestsProvider = require('../ApiRequestsProvider');
+    Mailing = require('../Mailing');
 
 
 var should = chai.should();
