@@ -12,7 +12,7 @@ function ApiRequestProvider(mailingQueue, db, eventEmitter) {
 
 ApiRequestProvider.prototype.isEmpty = function () {
     return this.mailingQueue.head();
-}
+};
 
 ApiRequestProvider.prototype.getNextApiRequest = function () {
     var mailing = this.mailingQueue.head(),
@@ -60,7 +60,7 @@ ApiRequestProvider.prototype.getNextApiRequest = function () {
     }
 
     return deferred.promise;
-}
+};
 
 ApiRequestProvider.create = function (mailingQueue, db, eventEmitter) {
     return new this(mailingQueue, db, eventEmitter);

@@ -6,6 +6,7 @@ var q = require('q'),
 	Queue = require('./Queue'),
 	Mailing = require('./Mailing'),
 	Constants = require('./Constants'),
+	Configuration = require('./Configuration'),
 	vkontakte_api = require('./vkontakte-api'),
 	mongoClient = require('mongodb').MongoClient,
 	ApiRequestsProvider = require('./ApiRequestsProvider'),
@@ -14,10 +15,27 @@ var q = require('q'),
 	eventEmitter,
 	loopTimerId;
 
-mongoClient.connect(Constants.MONGO_URL, function(err, db) {
+if (process.argv.length < 3) {
+	console.info('Usage: node app.js config.json');
+	process.exit(1);
+}
+
+Configuration.load(process.argv[2]).then(function (config) {
+	if (!config.database || !config.database.url) {
+		console.error('Wrong config file format');
+		process.exit(1);
+	}
+	mongoClient.connect(config.database.url, main);
+})
+	.catch(function (){
+		console.info('Error while reading config file');
+		process.exit(1);
+	});
+
+function main(err, db) {
 	if (err) {
-		console.log('Error while connecting to mongo.');
-		exit(-1);
+		console.error('Mongo connection error.');
+		process.exit(1);
 	}
 
 	eventEmitter = new Events.EventEmitter();
@@ -54,7 +72,7 @@ mongoClient.connect(Constants.MONGO_URL, function(err, db) {
 				var update = q.defer();
 				updates.push(update);
 				db.collection('players').updateOne(
-					{vk_id: playerId },
+					{ vk_id: playerId },
 					{
 						$push: {
 							mailing_list: apiRequest.id
@@ -87,6 +105,6 @@ mongoClient.connect(Constants.MONGO_URL, function(err, db) {
 			processMailing();
 		}
 	}
-});
+}
 
 
