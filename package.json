@@ -1,14 +1,14 @@
 {
   "name": "Postman",
   "version": "1.0.0",
-  "description": "Test task for PlayCat",
+  "description": "Test task for PlayKot",
   "main": "app.js",
   "scripts": {
     "test": "mocha spec"
   },
   "repository": {
     "type": "git",
-    "url": "https://bitbucket.org/kovalas/node-multiplexor/src"
+    "url": "https://github.com/alexsanya/Postman"
   },
   "author": "Koval Alexander",
   "license": "ISC",
