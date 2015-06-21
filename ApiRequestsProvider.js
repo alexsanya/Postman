@@ -4,9 +4,10 @@ var q = require('q'),
     Constants = require('./Constants'),
     ApiRequest = require('./ApiRequest');
 
-function ApiRequestProvider(mailingQueue, db, eventEmitter) {
+function ApiRequestProvider(mailingQueue, db, eventEmitter, logger) {
     this.mailingQueue = mailingQueue;
     this.eventEmitter = eventEmitter;
+    this.logger = logger;
     this.db = db;
 }
 
@@ -21,7 +22,10 @@ ApiRequestProvider.prototype.getNextApiRequest = function () {
 
     function pullPlayersGroup(mailing) {
         self.eventEmitter.removeAllListeners('append');
-        mailing.markStarted();
+        if (mailing.state === 'waiting') {
+            mailing.markStarted();
+            self.logger.append('[mailing.start] Started mailing ' + mailing._id + ' Template: ' + mailing.template);
+        }
         self.db.collection('players')   //проверка списка отправленных уведомдений
             .find({
                 mailing_list: {
@@ -33,6 +37,7 @@ ApiRequestProvider.prototype.getNextApiRequest = function () {
             .toArray(function (err, players) {
                 if (!players.length) {
                     self.mailingQueue.eject();
+                    self.logger.append('[mailing.finish] Mailing ' + mailing._id + ' done.');
                     return deferred.resolve(self.getNextApiRequest());
                 }
                 var userName = players[0].first_name,
@@ -62,8 +67,8 @@ ApiRequestProvider.prototype.getNextApiRequest = function () {
     return deferred.promise;
 };
 
-ApiRequestProvider.create = function (mailingQueue, db, eventEmitter) {
-    return new this(mailingQueue, db, eventEmitter);
+ApiRequestProvider.create = function (mailingQueue, db, eventEmitter, logger) {
+    return new this(mailingQueue, db, eventEmitter, logger);
 };
 
 module.exports = ApiRequestProvider;

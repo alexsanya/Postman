@@ -5,6 +5,7 @@ var q = require('q'),
 	Events = require('events'),
 	Queue = require('./Queue'),
 	Mailing = require('./Mailing'),
+	Logger = require('./Logger'),
 	Constants = require('./Constants'),
 	Configuration = require('./Configuration'),
 	vkontakte_api = require('./vkontakte-api'),
@@ -13,10 +14,11 @@ var q = require('q'),
 	apiRequestsProvider,
 	mailingQueue,
 	eventEmitter,
-	loopTimerId;
+	loopTimerId,
+	logger;
 
-if (process.argv.length < 3) {
-	console.info('Usage: node app.js config.json');
+if (process.argv.length < 4) {
+	console.info('Usage: node app.js config.json log.txt');
 	process.exit(1);
 }
 
@@ -40,13 +42,14 @@ function main(err, db) {
 
 	eventEmitter = new Events.EventEmitter();
 	mailingQueue = Queue.create(eventEmitter);
+	logger = Logger.create(process.argv[3]);
 
 	//#TODO Загрузка очереди из базы со статусом != finished
 
 	server.post('/send', function (req, res) {
 		textBody(req, function (err, body) {
 			var newMailing = createMailing(body);
-			res.setHeader('X-Mailing-Id', newMailing._id);
+			res.setHeader('X-Mailing-Id', newMailing._id); //идентификатор для запроса статуса
 			res.send(201);
 		});
 	});
@@ -54,7 +57,7 @@ function main(err, db) {
 	//#TODO Получение статуса рассылки
 	server.listen(8081);
 
-	apiRequestsProvider = ApiRequestsProvider.create(mailingQueue, db, eventEmitter);
+	apiRequestsProvider = ApiRequestsProvider.create(mailingQueue, db, eventEmitter, logger);
 	loopTimerId = setTimeout(processMailing, Constants.REQUESTS_TIME_LIMIT);
 
 	function processMailing() {
@@ -93,17 +96,22 @@ function main(err, db) {
 	}
 
 	function logApiRequest(apiRequest) {
-		console.log('Processing api request: ', JSON.stringify(apiRequest));
+		logger.append(
+			'[api.request] ' +
+			'Mailing id: ' + mailingQueue.head()._id + ' ' +
+			'Players: ' + JSON.stringify(apiRequest.playersList)
+		);
 	}
 
 	function createMailing(body) {
-		return mailingQueue.append(Mailing.create(body));
+		var mailing =  mailingQueue.append(Mailing.create(body));
 
-		//запускаем рассылку сразу, не дожидаясь события таймера, если очередь пуста
-		if (apiRequestsProvider.isEmpty()) {
-			clearTimeout(loopTimerId);
-			processMailing();
-		}
+		logger.append(
+			'[mailing.create] ' +
+			'Mailing id: ' + mailing._id
+		);
+
+		return mailing;
 	}
 }
 
