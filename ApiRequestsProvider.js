@@ -25,6 +25,10 @@ ApiRequestProvider.prototype.getNextApiRequest = function () {
         if (mailing.state === 'waiting') {
             mailing.markStarted();
             self.logger.append('[mailing.start] Started mailing ' + mailing._id + ' Template: ' + mailing.template);
+            self.db.collection('mailings').updateOne(
+                {_id: mailing._id},
+                {$set: {state: 'in progress', startedAt: Date.now()}}
+            );
         }
         self.db.collection('players')   //проверка списка отправленных уведомдений
             .find({

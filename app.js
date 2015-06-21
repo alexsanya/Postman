@@ -71,6 +71,18 @@ function main(err, db) {
 		});
 	});
 
+	server.get('/status/:id', function (req, res) {
+		db.collection('mailings')
+			.findOne({_id: parseInt(req.params.id)}, function (err, mailing) {
+				if (!mailing) {
+					res.send(404);
+					return;
+				}
+				res.setHeader('Content-type', 'application/json');
+				res.send(200, mailing);
+			});
+	});
+
 	//#TODO Получение статуса рассылки
 	server.listen(Constants.PORT);
 

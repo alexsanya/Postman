@@ -1,7 +1,7 @@
 'use strict';
 
 function Mailing(template, id) {
-    this.createdAt = id ? id : Date.now(    );
+    this.createdAt = id ? id : Date.now();
     this._id = this.createdAt;
     this.state = 'waiting';
     this.template = template;
