@@ -1,18 +1,21 @@
 'use strict';
 
-function Queue() {
+function Queue(eventEmitter) {
     this.queue = [];
+    this.eventEmitter = eventEmitter;
 }
 
-Queue.create = function () {
-    return new this;
+Queue.create = function (eventEmitter) {
+    return new this(eventEmitter);
 };
 
 Queue.prototype.append = function (item) {
     this.queue.push(item);
+    this.eventEmitter.emit('append');
 };
 
 Queue.prototype.eject = function () {
+    this.eventEmitter.emit('eject');
     return this.queue.length ? this.queue.splice(0, 1)[0] : null;
 };
 

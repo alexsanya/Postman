@@ -13,6 +13,7 @@
   "author": "Koval Alexander",
   "license": "ISC",
   "dependencies": {
+    "body": "^5.1.0",
     "mongodb": "^2.0.34",
     "q": "^1.4.1",
     "restify": "^3.0.3"

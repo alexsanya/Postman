@@ -9,6 +9,6 @@ ApiRequest.create = function (usersList, message) {
     return new this(usersList, message);
 }
 
-module.export = ApiRequest;
+module.exports = ApiRequest;
 
 

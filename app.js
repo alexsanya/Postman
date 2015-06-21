@@ -1,11 +1,15 @@
 'use strict';
 var server = require('restify').createServer(),
-	mailingQueue = require('./Queue').create(),
+	textBody = require('body'),
+	Events = require('events'),
+	Queue = require('./Queue'),
 	Mailing = require('./Mailing'),
 	Constants = require('./Constants'),
 	mongoClient = require('mongodb').MongoClient,
 	ApiRequestsProvider = require('./ApiRequestsProvider'),
 	apiRequestsProvider,
+	mailingQueue,
+	eventEmitter,
 	loopTimerId,
 	db;
 
@@ -15,10 +19,15 @@ db = mongoClient.connect(Constants.MONGO_URL, function(err, db) {
 		exit(-1);
 	}
 
-	server.get('/send', createDelivery);
+	eventEmitter = new Events.EventEmitter();
+	mailingQueue = Queue.create(eventEmitter);
+
+	server.post('/send', function (req, res) {
+		textBody(req, createMailing);
+	});
 	server.listen(8081);
 
-	apiRequestsProvider = ApiRequestsProvider.create(mailingQueue, db);
+	apiRequestsProvider = ApiRequestsProvider.create(mailingQueue, db, eventEmitter);
 	loopTimerId = setTimeout(processMailing, Constants.REQUESTS_TIME_LIMIT);
 });
 
@@ -38,8 +47,8 @@ function logApiRequest() {
 	console.log('Logging');
 }
 
-function createDelivery(req, res, next) {
-	mailingQueue.append(Mailing.create(req.body));
+function createMailing(err, body) {
+	mailingQueue.append(Mailing.create(body));
 
 	//запускаем рассылку сразу, не дожидаясь события таймера, если очередь пуста
 	if (apiRequestsProvider.isEmpty()) {

@@ -4,48 +4,62 @@ var q = require('q'),
     Constants = require('./Constants'),
     ApiRequest = require('./ApiRequest');
 
-function ApiRequestProvider(mailingQueue, db) {
+function ApiRequestProvider(mailingQueue, db, eventEmitter) {
     this.mailingQueue = mailingQueue;
+    this.eventEmitter = eventEmitter;
     this.db = db;
+}
+
+ApiRequestProvider.prototype.isEmpty = function () {
+    return this.mailingQueue.head();
 }
 
 ApiRequestProvider.prototype.getNextApiRequest = function () {
     var mailing = this.mailingQueue.head(),
         deferred = q.defer(),
         self = this;
-    if (!mailing) {
-        return q.resolve();
-    }
-    mailing.markStarted();
-    self.db.collection('palyers')
-        .find({
-            mailing_list: {
-                $not: {
-                    $elemMatch: mailing._id
+
+    function pullPlayersGroup(mailing) {
+        self.eventEmitter.removeAllListeners('append');
+        mailing.markStarted();
+        self.db.collection('players')
+            .find({
+                mailing_list: {
+                    $nin: [mailing._id]
                 }
-            }
-        })
-        .sort({first_name: 1})
-        .limit(Constants.MAX_NOTIFICATIONS_AT_ONCE)
-        .toArray(function (err, users) {
-            if (!users.length) {
-                self.mailingQueue.eject();
-                return deferred.resolve(self.getNextApiRequest());
-            }
-            var userName = users[0].first_name,
-                usersWithSameName = users.filter(function (){
-                    return user.first_name === userName;
-                });
-            deferred.resolve(ApiRequest.create(
-                usersWithSameName,
-                mailing.template.replace('%name%', userName))
-            );
+            })
+            .sort({first_name: 1})
+            .limit(Constants.MAX_NOTIFICATIONS_AT_ONCE)
+            .toArray(function (err, players) {
+                if (!players.length) {
+                    self.mailingQueue.eject();
+                    return deferred.resolve(self.getNextApiRequest());
+                }
+                var userName = players[0].first_name,
+                    usersWithSameName = players.filter(function (player){
+                        return player.first_name === userName;
+                    });
+                deferred.resolve(ApiRequest.create(
+                        usersWithSameName,
+                        mailing.template.replace('%name%', userName)
+                    )
+                );
+            });
+    }
+
+    if (!mailing) {
+        self.eventEmitter.on('append', function () {
+            pullPlayersGroup(self.mailingQueue.head());
         });
+    } else {
+        pullPlayersGroup(mailing);
+    }
+
     return deferred.promise;
 }
 
-ApiRequestProvider.create = function (mailingQueue, db) {
-    return new this(mailingQueue, db);
+ApiRequestProvider.create = function (mailingQueue, db, eventEmitter) {
+    return new this(mailingQueue, db, eventEmitter);
 };
 
 module.exports = ApiRequestProvider;
