@@ -48,14 +48,15 @@ function main(err, db) {
 
 	server.post('/send', function (req, res) {
 		textBody(req, function (err, body) {
-			var newMailing = createMailing(body);
-			res.setHeader('X-Mailing-Id', newMailing._id); //идентификатор для запроса статуса
-			res.send(201);
+			createMailing(body).then(function (newMailing) {
+				res.setHeader('X-Mailing-Id', newMailing._id); //идентификатор для запроса статуса
+				res.send(201);
+			});
 		});
 	});
 
 	//#TODO Получение статуса рассылки
-	server.listen(8081);
+	server.listen(Constants.PORT);
 
 	apiRequestsProvider = ApiRequestsProvider.create(mailingQueue, db, eventEmitter, logger);
 	loopTimerId = setTimeout(processMailing, Constants.REQUESTS_TIME_LIMIT);
@@ -104,14 +105,21 @@ function main(err, db) {
 	}
 
 	function createMailing(body) {
-		var mailing =  mailingQueue.append(Mailing.create(body));
+		var deferred = q.defer(),
+			mailing =  mailingQueue.append(Mailing.create(body));
+		db.collection('mailings').insertOne(mailing, function (err) {
+			if (!err) {
+				logger.append(
+					'[mailing.create] ' +
+					'Mailing id: ' + mailing._id
+				);
+				deferred.resolve(mailing);
+			} else {
+				deferred.reject(err);
+			}
+		});
 
-		logger.append(
-			'[mailing.create] ' +
-			'Mailing id: ' + mailing._id
-		);
-
-		return mailing;
+		return deferred.promise;
 	}
 }
 

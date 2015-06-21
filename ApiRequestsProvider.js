@@ -38,7 +38,16 @@ ApiRequestProvider.prototype.getNextApiRequest = function () {
                 if (!players.length) {
                     self.mailingQueue.eject();
                     self.logger.append('[mailing.finish] Mailing ' + mailing._id + ' done.');
-                    return deferred.resolve(self.getNextApiRequest());
+                    self.db.collection('mailings').updateOne(
+                        {_id: mailing._id},
+                        {$set: {state: 'done', finishedAt: Date.now()}},
+                        function (err) {
+                            if (!err) {
+                                deferred.resolve(self.getNextApiRequest());
+                            }
+                        }
+                    );
+                    return;
                 }
                 var userName = players[0].first_name,
                     usersWithSameName = players.filter(function (player){
