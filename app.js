@@ -44,7 +44,23 @@ function main(err, db) {
 	mailingQueue = Queue.create(eventEmitter);
 	logger = Logger.create(process.argv[3]);
 
-	//#TODO Загрузка очереди из базы со статусом != finished
+	logger.append('Mailing service started');
+	logger.append('Checking for unfinished mailings...');
+
+	//загрузка очереди прерванных рассылок из базы
+	db.collection('mailings').find({
+		state: {$nin: ['done']}
+	})
+		.toArray(function (err, mailings) {
+			if (mailings.length) {
+				logger.append('Found ' + mailings.length + ' unfinished mailings');
+				mailings.forEach(function (mailing) {
+					mailingQueue.append(Mailing.create(mailing.template, mailing._id));
+				});
+			}
+			apiRequestsProvider = ApiRequestsProvider.create(mailingQueue, db, eventEmitter, logger);
+			loopTimerId = setTimeout(processMailing, Constants.REQUESTS_TIME_LIMIT);
+		});
 
 	server.post('/send', function (req, res) {
 		textBody(req, function (err, body) {
@@ -58,9 +74,7 @@ function main(err, db) {
 	//#TODO Получение статуса рассылки
 	server.listen(Constants.PORT);
 
-	apiRequestsProvider = ApiRequestsProvider.create(mailingQueue, db, eventEmitter, logger);
-	loopTimerId = setTimeout(processMailing, Constants.REQUESTS_TIME_LIMIT);
-
+	//основной цикл обработки запросов
 	function processMailing() {
 		apiRequestsProvider.getNextApiRequest()
 			.then(processApiRequest)

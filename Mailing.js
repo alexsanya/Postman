@@ -1,14 +1,14 @@
 'use strict';
 
-function Mailing(template) {
-    this.createdAt = Date.now();
+function Mailing(template, id) {
+    this.createdAt = id ? id : Date.now(    );
     this._id = this.createdAt;
     this.state = 'waiting';
     this.template = template;
 }
 
-Mailing.create = function (template) {
-  return new this(template);
+Mailing.create = function (template, id) {
+  return new this(template, id);
 };
 
 Mailing.prototype.markStarted = function () {
