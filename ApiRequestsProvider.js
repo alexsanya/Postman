@@ -22,7 +22,7 @@ ApiRequestProvider.prototype.getNextApiRequest = function () {
     function pullPlayersGroup(mailing) {
         self.eventEmitter.removeAllListeners('append');
         mailing.markStarted();
-        self.db.collection('players')
+        self.db.collection('players')   //проверка списка отправленных уведомдений
             .find({
                 mailing_list: {
                     $nin: [mailing._id]
@@ -38,10 +38,14 @@ ApiRequestProvider.prototype.getNextApiRequest = function () {
                 var userName = players[0].first_name,
                     usersWithSameName = players.filter(function (player){
                         return player.first_name === userName;
-                    });
+                    })
+                        .map(function (player) {
+                            return player.vk_id;
+                        });
                 deferred.resolve(ApiRequest.create(
+                        mailing._id,
                         usersWithSameName,
-                        mailing.template.replace('%name%', userName)
+                        mailing.template.split('%name%').join(userName)
                     )
                 );
             });

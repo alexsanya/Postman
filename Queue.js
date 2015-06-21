@@ -12,6 +12,7 @@ Queue.create = function (eventEmitter) {
 Queue.prototype.append = function (item) {
     this.queue.push(item);
     this.eventEmitter.emit('append');
+    return item;
 };
 
 Queue.prototype.eject = function () {

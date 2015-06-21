@@ -1,12 +1,13 @@
 'use strict';
 
-function ApiRequest(usersList, message) {
-    this.usersList = usersList;
+function ApiRequest(id, playersList, message) {
+    this.id = id;
+    this.playersList = playersList;
     this.message = message;
 }
 
-ApiRequest.create = function (usersList, message) {
-    return new this(usersList, message);
+ApiRequest.create = function (id, usersList, message) {
+    return new this(id, usersList, message);
 }
 
 module.exports = ApiRequest;
