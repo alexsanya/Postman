@@ -11,10 +11,6 @@ function ApiRequestProvider(mailingQueue, db, eventEmitter, logger) {
     this.db = db;
 }
 
-ApiRequestProvider.prototype.isEmpty = function () {
-    return this.mailingQueue.head();
-};
-
 ApiRequestProvider.prototype.getNextApiRequest = function () {
     var mailing = this.mailingQueue.head(),
         deferred = q.defer(),
