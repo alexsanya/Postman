@@ -1,0 +1,25 @@
+{
+  "name": "Postman",
+  "version": "1.0.0",
+  "description": "Test task for PlayCat",
+  "main": "app.js",
+  "scripts": {
+    "test": "mocha spec"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://bitbucket.org/kovalas/node-multiplexor/src"
+  },
+  "author": "Koval Alexander",
+  "license": "ISC",
+  "dependencies": {
+    "mongodb": "^2.0.34",
+    "q": "^1.4.1",
+    "restify": "^3.0.3"
+  },
+  "devDependencies": {
+    "chai": "^3.0.0",
+    "sinon": "^1.15.3",
+    "sinon-chai": "^2.8.0"
+  }
+}
