@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/alexsanya/Postman.svg?branch=master)](https://travis-ci.org/alexsanya/Postman)
 ## Тестовое задание
 Данный скрипт является решением тестового задания
 ## Запуск
